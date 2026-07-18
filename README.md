@@ -1,4 +1,4 @@
-# 🎵 Music Recommender Simulation
+# 🎵 VectorTune
 
 ## Project Summary
 
