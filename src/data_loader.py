@@ -57,8 +57,20 @@ def initialize_engine(csv_path="data/tracks_features.csv"):
     # Normalization
     df['tempo_norm'] = (df['tempo'] - df['tempo'].min()) / (df['tempo'].max() - df['tempo'].min())
     df['loudness_norm'] = (df['loudness'] - df['loudness'].min()) / (df['loudness'].max() - df['loudness'].min())
-    
-    feature_cols = ['danceability', 'energy', 'key', 'mode', 'speechiness', 'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo_norm', 'loudness_norm']
+
+    # Musical key is circular (key 11 / B and key 0 / C are adjacent, not far apart),
+    # so encode it as an (x, y) point on the unit circle instead of a raw 0-11 integer.
+    # Scaled by 0.5 so key_x/key_y span [-0.5, 0.5] (range 1), matching the other
+    # 0-1 features' range, instead of the unit circle's natural [-1, 1] (range 2) —
+    # otherwise key would still be weighted 2x as heavily as everything else.
+    df['key_x'] = (0.5 * np.cos(2 * np.pi * df['key'] / 12)).astype('float32')
+    df['key_y'] = (0.5 * np.sin(2 * np.pi * df['key'] / 12)).astype('float32')
+
+    feature_cols = [
+        'danceability', 'energy', 'speechiness', 'acousticness',
+        'instrumentalness', 'liveness', 'valence', 'tempo_norm',
+        'loudness_norm', 'mode', 'key_x', 'key_y',
+    ]
     feature_matrix = df[feature_cols].to_numpy(dtype=np.float32)
-    
+
     return df, feature_matrix, feature_cols

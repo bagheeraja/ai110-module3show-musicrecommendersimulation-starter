@@ -1,17 +1,25 @@
 import sys
 import numpy as np
+from tabulate import tabulate
 
 # Absolute package layer imports
 from data_loader import initialize_engine
 from recommender import apply_scoring_rule, apply_ranking_rule
 
-# Feature order expected by initialize_engine()'s feature_matrix.
-FEATURE_COLS = [
-    'danceability', 'energy', 'key', 'mode', 'speechiness', 'acousticness',
-    'instrumentalness', 'liveness', 'valence', 'tempo_norm', 'loudness_norm',
-]
 
-# Distinct user preference profiles, expressed as normalized feature vectors
+def build_seed_vector(prefs, feature_cols):
+    """
+    Builds a seed vector from a preferences dict for the given feature_cols.
+    `prefs` uses a plain 0-11 `key` value for readability; this expands it into
+    the circular `key_x`/`key_y` encoding data_loader.py actually indexes on.
+    """
+    key_x = 0.5 * np.cos(2 * np.pi * prefs['key'] / 12)
+    key_y = 0.5 * np.sin(2 * np.pi * prefs['key'] / 12)
+    values = {**prefs, 'key_x': key_x, 'key_y': key_y}
+    return np.array([values[col] for col in feature_cols], dtype=np.float32)
+
+
+# Distinct user preference profiles, expressed as normalized feature values
 # (0-1 range for most features; key is 0-11, mode is 0/1).
 STRESS_TEST_PROFILES = {
     "High-Energy Pop": {
@@ -53,15 +61,18 @@ def run_stress_test():
     df, feature_matrix, feature_cols = initialize_engine()
 
     for name, prefs in STRESS_TEST_PROFILES.items():
-        seed_vector = np.array([prefs[col] for col in feature_cols], dtype=np.float32)
+        seed_vector = build_seed_vector(prefs, feature_cols)
         scores = apply_scoring_rule(seed_vector, feature_matrix)
-        recommendations = apply_ranking_rule(scores, df, top_n=5)
+        recommendations = apply_ranking_rule(
+            scores, df, top_n=5,
+            seed_vector=seed_vector, feature_matrix=feature_matrix, feature_cols=feature_cols,
+        )
 
         print("=" * 80)
         print(f"Profile: {name}")
         print(f"  {prefs}")
         print("-" * 80)
-        print(recommendations.to_string(index=False))
+        print(tabulate(recommendations, headers="keys", tablefmt="fancy_grid", showindex=False))
         print()
 
 
@@ -101,7 +112,10 @@ def run_app():
                 # Execute calculation pipelines
                 with st.spinner("Processing linear algebra matching matrix..."):
                     scores = apply_scoring_rule(seed_vector, feature_matrix)
-                    recommendations = apply_ranking_rule(scores, df, top_n=5)
+                    recommendations = apply_ranking_rule(
+                        scores, df, top_n=5,
+                        seed_vector=seed_vector, feature_matrix=feature_matrix, feature_cols=feature_cols,
+                    )
 
                 # Deduplicate matching tracks (remove the seed song from its own recommendations list)
                 recommendations = recommendations[
@@ -117,6 +131,7 @@ def run_app():
                         with col1:
                             st.markdown(f"**{row['name']}**")
                             st.markdown(f"*{row['artists']}*")
+                            st.caption(row['reasons'])
                         with col2:
                             st.metric(label="Match", value=f"{row['match_score']}%")
             else:

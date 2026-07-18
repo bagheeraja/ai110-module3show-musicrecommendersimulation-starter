@@ -312,6 +312,135 @@ José María - En Vivo                                  ['Óscar Chávez']    67
 
 **What changed:** each profile now returns exactly 5 results (the old runs sometimes returned a 6th row from the `top_n + 1` slicing) and no artist or album repeats within a single profile's list. For these six profiles the top 5 tracks themselves happened to already be from distinct artists/albums, so the visible song list looks the same — the filter's effect here is mainly removing the extra row and guaranteeing no crowding, rather than swapping out songs. On denser regions of the catalog (e.g. a seed song with many remixes/covers), the same filter would be expected to swap out later slots that used to be filled by near-duplicates.
 
+### Update — v1.0.2: Visual Summary Table + "Reasons" Column
+
+Terminal output is now rendered as a formatted table via the `tabulate` library instead of a raw pandas `to_string()` dump, and each row now includes a `reasons` column explaining *why* it matched — the two features where the track sits closest to the seed profile (`explain_match()` in `src/recommender.py`, wired through `apply_ranking_rule`'s new optional `seed_vector`/`feature_matrix`/`feature_cols` args). This also shows up in the Streamlit UI as a caption under each track. Re-running the stress test:
+
+```text
+================================================================================
+Profile: High-Energy Pop
+  {'danceability': 0.8, 'energy': 0.9, 'key': 5, 'mode': 1, 'speechiness': 0.06, 'acousticness': 0.05, 'instrumentalness': 0.0, 'liveness': 0.15, 'valence': 0.85, 'tempo_norm': 0.6, 'loudness_norm': 0.85}
+--------------------------------------------------------------------------------
+╒═════════════════════════════════════╤════════════════════════════════╤═══════════════╤════════════════════════════════════════════════╕
+│ name                                │ artists                        │   match_score │ reasons                                        │
+╞═════════════════════════════════════╪════════════════════════════════╪═══════════════╪════════════════════════════════════════════════╡
+│ We Gotta Talk                       │ ['Jennifer Lopez']             │          91.8 │ Closely matches on key, mode, instrumentalness │
+├─────────────────────────────────────┼────────────────────────────────┼───────────────┼────────────────────────────────────────────────┤
+│ It Goes Around                      │ ['ILLEGAL SUBSTANCE']          │          91.1 │ Closely matches on key, mode, instrumentalness │
+├─────────────────────────────────────┼────────────────────────────────┼───────────────┼────────────────────────────────────────────────┤
+│ Chomeur                             │ ['Omar Pene', 'Super Diamono'] │          91   │ Closely matches on key, mode, danceability     │
+├─────────────────────────────────────┼────────────────────────────────┼───────────────┼────────────────────────────────────────────────┤
+│ Arremangala, Arrempujala            │ ['Internacionales Conejos']    │          90.4 │ Closely matches on key, mode, instrumentalness │
+├─────────────────────────────────────┼────────────────────────────────┼───────────────┼────────────────────────────────────────────────┤
+│ Oh Happy Gay (Extended Party Remix) │ ['Manuel Sanchez']             │          90.2 │ Closely matches on key, mode, acousticness     │
+╘═════════════════════════════════════╧════════════════════════════════╧═══════════════╧════════════════════════════════════════════════╛
+
+================================================================================
+Profile: Chill Lofi
+  {'danceability': 0.5, 'energy': 0.25, 'key': 0, 'mode': 1, 'speechiness': 0.04, 'acousticness': 0.85, 'instrumentalness': 0.4, 'liveness': 0.1, 'valence': 0.4, 'tempo_norm': 0.3, 'loudness_norm': 0.3}
+--------------------------------------------------------------------------------
+╒═════════════════════════════════════════════════════════╤═════════════════════════════════════════════════════════════════════╤═══════════════╤═══════════════════════════════════════════╕
+│ name                                                    │ artists                                                             │   match_score │ reasons                                   │
+╞═════════════════════════════════════════════════════════╪═════════════════════════════════════════════════════════════════════╪═══════════════╪═══════════════════════════════════════════╡
+│ Wolf                                                    │ ['Heikki Sarmanto']                                                 │          76.7 │ Closely matches on key, mode, liveness    │
+├─────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────┼───────────────┼───────────────────────────────────────────┤
+│ Den forlorade sonen (The Prodigal Son) Suite: VI. Polka │ ['Hugo Alfvén', 'RTÉ National Symphony Orchestra', 'Niklas Willen'] │          76.3 │ Closely matches on key, mode, speechiness │
+├─────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────┼───────────────┼───────────────────────────────────────────┤
+│ Chicago Moves: II. The Spaghetti Bowl                   │ ['David Sampson', 'Gaudete Brass']                                  │          75.8 │ Closely matches on key, mode, liveness    │
+├─────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────┼───────────────┼───────────────────────────────────────────┤
+│ Lil's Darlin'                                           │ ['George Benson']                                                   │          75.6 │ Closely matches on key, mode, speechiness │
+├─────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────┼───────────────┼───────────────────────────────────────────┤
+│ To the Roof - from Vanilla Sky (2001)                   │ ['Nancy Wilson', 'Original Soundtrack']                             │          75.4 │ Closely matches on key, mode, speechiness │
+╘═════════════════════════════════════════════════════════╧═════════════════════════════════════════════════════════════════════╧═══════════════╧═══════════════════════════════════════════╛
+
+================================================================================
+Profile: Deep Intense Rock
+  {'danceability': 0.35, 'energy': 0.95, 'key': 2, 'mode': 0, 'speechiness': 0.08, 'acousticness': 0.02, 'instrumentalness': 0.05, 'liveness': 0.35, 'valence': 0.3, 'tempo_norm': 0.75, 'loudness_norm': 0.95}
+--------------------------------------------------------------------------------
+╒══════════════════════════════╤════════════════╤═══════════════╤════════════════════════════════════════════════╕
+│ name                         │ artists        │   match_score │ reasons                                        │
+╞══════════════════════════════╪════════════════╪═══════════════╪════════════════════════════════════════════════╡
+│ Sound of Madness             │ ['Shinedown']  │          90.1 │ Closely matches on key, mode, tempo_norm       │
+├──────────────────────────────┼────────────────┼───────────────┼────────────────────────────────────────────────┤
+│ Mesikämmen                   │ ['Aeolian']    │          87.6 │ Closely matches on key, mode, liveness         │
+├──────────────────────────────┼────────────────┼───────────────┼────────────────────────────────────────────────┤
+│ Genom snö och is             │ ['Snöfrid']    │          86.9 │ Closely matches on key, mode, instrumentalness │
+├──────────────────────────────┼────────────────┼───────────────┼────────────────────────────────────────────────┤
+│ Sadness                      │ ['Magg Dylan'] │          86   │ Closely matches on key, mode, speechiness      │
+├──────────────────────────────┼────────────────┼───────────────┼────────────────────────────────────────────────┤
+│ Through the Ages of Atrocity │ ['Artillery']  │          85.9 │ Closely matches on key, mode, liveness         │
+╘══════════════════════════════╧════════════════╧═══════════════╧════════════════════════════════════════════════╛
+
+================================================================================
+Profile: Conflicting: High Energy + Sad
+  {'danceability': 0.3, 'energy': 0.9, 'key': 1, 'mode': 0, 'speechiness': 0.05, 'acousticness': 0.1, 'instrumentalness': 0.1, 'liveness': 0.2, 'valence': 0.05, 'tempo_norm': 0.7, 'loudness_norm': 0.8}
+--------------------------------------------------------------------------------
+╒═══════════════════════════════╤═════════════════════╤═══════════════╤════════════════════════════════════════════╕
+│ name                          │ artists             │   match_score │ reasons                                    │
+╞═══════════════════════════════╪═════════════════════╪═══════════════╪════════════════════════════════════════════╡
+│ New Beginning                 │ ['Primary Weapon']  │          87.6 │ Closely matches on key, mode, tempo_norm   │
+├───────────────────────────────┼─────────────────────┼───────────────┼────────────────────────────────────────────┤
+│ Longing                       │ ['Karsh Kale']      │          86.2 │ Closely matches on key, mode, acousticness │
+├───────────────────────────────┼─────────────────────┼───────────────┼────────────────────────────────────────────┤
+│ Found My Way                  │ ['Navion', 'Oryon'] │          85.4 │ Closely matches on key, mode, energy       │
+├───────────────────────────────┼─────────────────────┼───────────────┼────────────────────────────────────────────┤
+│ Bring It Back                 │ ['Leeroy Stagger']  │          83.9 │ Closely matches on key, mode, speechiness  │
+├───────────────────────────────┼─────────────────────┼───────────────┼────────────────────────────────────────────┤
+│ I DON'T WANNA DIE IN NEW YORK │ ['SPICE']           │          83.7 │ Closely matches on key, mode, tempo_norm   │
+╘═══════════════════════════════╧═════════════════════╧═══════════════╧════════════════════════════════════════════╛
+
+================================================================================
+Profile: All Extremes (min/max mix)
+  {'danceability': 1.0, 'energy': 0.0, 'key': 11, 'mode': 1, 'speechiness': 0.95, 'acousticness': 1.0, 'instrumentalness': 1.0, 'liveness': 1.0, 'valence': 0.0, 'tempo_norm': 0.0, 'loudness_norm': 1.0}
+--------------------------------------------------------------------------------
+╒══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╤══════════════════════════════╤═══════════════╤════════════════════════════════════════════╕
+│ name                                                                                                                                                                                                     │ artists                      │   match_score │ reasons                                    │
+╞══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╪══════════════════════════════╪═══════════════╪════════════════════════════════════════════╡
+│ Chet Atkins Voice Mail Liner Notes                                                                                                                                                                       │ ['Paul Craft']               │          51.4 │ Closely matches on key, mode, acousticness │
+├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┼────────────────────────────────────────────┤
+│ Quiet Bay - Northern Flicker, Robin, Red-Winged Blackbird, Great Blue Heron, Common Grackle, Tree Swallows, Common Yellowthroat, Osprey, Olive-Sided Flycatcher, Ruffled Grouse, Common Loon (In Flight) │ ["Dan Gibson's Solitudes"]   │          48.8 │ Closely matches on key, mode, valence      │
+├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┼────────────────────────────────────────────┤
+│ Phone Message 1                                                                                                                                                                                          │ ['Vinnie & The Stardusters'] │          48.1 │ Closely matches on key, mode, acousticness │
+├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┼────────────────────────────────────────────┤
+│ Non Military Intro                                                                                                                                                                                       │ ['Ian Simmonds']             │          46.9 │ Closely matches on key, mode, acousticness │
+├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┼────────────────────────────────────────────┤
+│ The Need to Upset Congress                                                                                                                                                                               │ ['Howard Zinn']              │          46.3 │ Closely matches on key, mode, acousticness │
+╘══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╛
+
+================================================================================
+Profile: Flatline (all neutral 0.5)
+  {'danceability': 0.5, 'energy': 0.5, 'key': 6, 'mode': 1, 'speechiness': 0.5, 'acousticness': 0.5, 'instrumentalness': 0.5, 'liveness': 0.5, 'valence': 0.5, 'tempo_norm': 0.5, 'loudness_norm': 0.5}
+--------------------------------------------------------------------------------
+╒══════════════════════╤═══════════════════════════════════════════════════╤═══════════════╤═════════════════════════════════════════════╕
+│ name                 │ artists                                           │   match_score │ reasons                                     │
+╞══════════════════════╪═══════════════════════════════════════════════════╪═══════════════╪═════════════════════════════════════════════╡
+│ Isolate              │ ['Brock Wilson']                                  │          69   │ Closely matches on key, mode, energy        │
+├──────────────────────┼───────────────────────────────────────────────────┼───────────────┼─────────────────────────────────────────────┤
+│ Rewind               │ ['Pearls Before Swine']                           │          68.8 │ Closely matches on key, mode, loudness_norm │
+├──────────────────────┼───────────────────────────────────────────────────┼───────────────┼─────────────────────────────────────────────┤
+│ José María - En Vivo │ ['Óscar Chávez']                                  │          67   │ Closely matches on key, mode, energy        │
+├──────────────────────┼───────────────────────────────────────────────────┼───────────────┼─────────────────────────────────────────────┤
+│ Upzy                 │ ['Jeff Morris', 'Karl Berger', 'Joe Hertenstein'] │          66.3 │ Closely matches on key, mode, liveness      │
+├──────────────────────┼───────────────────────────────────────────────────┼───────────────┼─────────────────────────────────────────────┤
+│ The Torture Chamber  │ ['Dj Swamp']                                      │          65.6 │ Closely matches on key, mode, loudness_norm │
+╘══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╛
+```
+
+**Unexpected discovery:** every single result across all six profiles lists `key` and `mode` as its top two reasons, with only the third slot varying. That's not a display bug — it's a real property of `apply_scoring_rule`'s scoring: because `key` (an unnormalized 0-11 integer) and `mode` (a 0/1 binary) aren't scaled down like the other 0-1 continuous features, they dominate the raw Euclidean distance far more than intended, so the actual winners of the ranking are, almost always, tracks that happen to share the seed's exact key and mode. This confirms — with direct evidence — the "largest numeric range dominates" bias already called out in the Potential Biases section above, and it means the current 0-100 `match_score` is quietly weighted much more heavily toward key/mode agreement than a listener would expect from "energy," "danceability," etc. (Note: `explain_match()`'s own diff comparisons *are* normalized by each feature's catalog range — this isn't an artifact of how the reasons are computed, it reflects what the un-normalized scoring rule actually optimized for.)
+
+### Update — v1.0.3: Circular + Normalized Key Encoding
+
+Two fixes to `key` in `src/data_loader.py`:
+
+1. **Circular encoding.** Musical key is circular (key 11 is right next to key 0, not maximally far from it), so raw integer key values were replaced with `key_x = 0.5·cos(2π·key/12)` and `key_y = 0.5·sin(2π·key/12)` — a point on a circle, so adjacent keys are actually close in feature space.
+2. **Scale normalization.** The unit circle naturally spans `[-1, 1]` (range 2), still twice the span of the other 0-1 features (range 1). Scaling by `0.5` shrinks `key_x`/`key_y` to `[-0.5, 0.5]` (range 1), so key now contributes to the Euclidean distance on equal footing with every other feature instead of being over- or under-weighted.
+
+`src/main.py`'s `build_seed_vector()` applies the identical `0.5` scaling when expanding a profile's human-readable `key` value, so hand-crafted stress-test profiles stay in the same coordinate space as the catalog.
+
+Re-running the stress test, two profiles' results actually changed as a result (not just cosmetic): "All Extremes" swapped in "Hijinx and a Child" and "Understood" for two of its lower slots, and "Flatline" swapped in "Sweater Day / Shelter" and "Solace" — concrete proof the rescaling changed real rankings, not just internal bookkeeping.
+
+**Refined discovery:** `mode` still shows up in nearly every result's reasons, but now that it's properly scaled, that's no longer a normalization artifact — it's because `mode` is *binary* (major/minor), so roughly half the catalog ties the seed exactly (diff = 0) on that one feature alone, while the continuous 0-1 features (energy, valence, etc.) almost never hit an exact match. A binary feature will structurally out-compete continuous features for "closest match" even at equal scale, simply because it's much easier to tie exactly. That's a distinct bias from the one v1.0.3 fixed, and normalizing scale alone doesn't resolve it — it would need either dropping binary features from the distance calculation or explicitly down-weighting them.
+
 ---
 
 ## Experiments

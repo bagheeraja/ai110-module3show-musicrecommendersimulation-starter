@@ -14,7 +14,24 @@ def apply_scoring_rule(seed_vector, matrix):
     return match_scores
 
 
-def apply_ranking_rule(match_scores, dataframe, top_n=5, diversify=True):
+def explain_match(seed_vector, track_vector, feature_cols, feature_ranges, top_k=3):
+    """
+    Builds a short human-readable reason string for why a track matched,
+    naming the `top_k` features where the track is closest to the seed.
+
+    Diffs are normalized by each feature's catalog-wide range before
+    comparing, since raw absolute differences would unfairly favor
+    naturally small-range features like `key` (0-11) or `mode` (0/1) over
+    0-1 continuous features like `valence` or `energy`.
+    """
+    per_feature_diff = np.abs(track_vector - seed_vector) / feature_ranges
+    closest_indices = np.argsort(per_feature_diff)[:top_k]
+    closest_features = [feature_cols[i] for i in closest_indices]
+    return "Closely matches on " + ", ".join(closest_features)
+
+
+def apply_ranking_rule(match_scores, dataframe, top_n=5, diversify=True,
+                        seed_vector=None, feature_matrix=None, feature_cols=None):
     """
     RANKING RULE: Curates, truncates, and sequences the raw data evaluations.
     Uses argpartition to bypass full sorting bottlenecks across 1.2M items.
@@ -23,6 +40,10 @@ def apply_ranking_rule(match_scores, dataframe, top_n=5, diversify=True):
     candidate if its `artists` or `album_id` already occupies a slot in the
     result set, so near-duplicate tracks (remixes, live cuts, same-album
     songs) don't crowd out the rest of the top N.
+
+    When seed_vector, feature_matrix, and feature_cols are all provided, an
+    extra `reasons` column is added, explaining each result via
+    explain_match().
     """
     if not diversify:
         # Fast partition array mapping using negative score metrics to grab the largest values
@@ -55,4 +76,14 @@ def apply_ranking_rule(match_scores, dataframe, top_n=5, diversify=True):
     ranked_results = dataframe.iloc[top_indices].copy()
     ranked_results['match_score'] = np.round(match_scores[top_indices], 1)
 
-    return ranked_results[['name', 'artists', 'match_score']]
+    columns = ['name', 'artists', 'match_score']
+    if seed_vector is not None and feature_matrix is not None and feature_cols is not None:
+        feature_ranges = np.ptp(feature_matrix, axis=0)
+        feature_ranges[feature_ranges == 0] = 1  # avoid divide-by-zero on constant columns
+        ranked_results['reasons'] = [
+            explain_match(seed_vector, feature_matrix[idx], feature_cols, feature_ranges)
+            for idx in top_indices
+        ]
+        columns = columns + ['reasons']
+
+    return ranked_results[columns]
