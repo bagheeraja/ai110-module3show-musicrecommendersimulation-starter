@@ -17,7 +17,24 @@ Replace this paragraph with your own summary of what your version does.
 
 ## How The System Works
 
-Explain your design in plain language.
+Real-world recommenders (Spotify, YouTube, etc.) generally work by representing both items and users as vectors in some feature space, then ranking items by how close they are to a user's taste profile — often blended with collaborative signals (what similar users liked) and business logic (freshness, diversity, promoted content) layered on top of the raw similarity score. They're also continuously updated from implicit feedback like skips, replays, and dwell time, not just explicit ratings.
+
+My version is a simplified, transparent slice of that idea: each song is represented as a numeric feature vector (e.g. energy, valence, tempo), and the user's taste profile is a single "seed" vector in that same space. The `Recommender` scores every candidate song purely by Euclidean distance to that seed — closer songs get a higher match score — then ranks and truncates to the top N. It intentionally leaves out collaborative filtering, popularity/freshness signals, and feedback loops, prioritizing a scoring rule that's easy to inspect and reason about over one that maximizes engagement or accounts for other listeners' behavior.
+
+### Algorithm Recipe
+
+1. Represent the user's taste profile as a single numeric seed vector over the same features as the songs (e.g. energy, valence, tempo).
+2. For each candidate song, build its feature vector and compute the Euclidean distance between it and the seed vector.
+3. Convert distance to a bounded match score: `match_score = 1 / (1 + distance) * 100`, so closer songs score near 100 and distant songs approach 0.
+4. Partition the candidates to find the top N highest match scores, then sort just that subset descending by score.
+5. Return the top N songs (name, artists, match score) as the final recommendation list.
+
+### Potential Biases
+
+- This system might over-prioritize whichever features have the largest numeric range (e.g. tempo in BPM could dominate over a 0–1 valence value) simply because raw Euclidean distance treats all feature dimensions as equally scaled.
+- It might over-prioritize genre or whichever feature is most consistently populated in the data, ignoring great songs that match the user's mood but differ on other axes.
+- Because it only compares against a single seed vector, it can't capture that a user's taste is often multi-modal (e.g. likes both chill acoustic and high-energy dance), so it may systematically under-recommend one side of a user's actual taste.
+- It has no popularity, freshness, or diversity signal, so it could keep surfacing near-duplicate songs instead of varied ones.
 
 Some prompts to answer:
 

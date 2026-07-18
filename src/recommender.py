@@ -1,73 +1,32 @@
-from typing import List, Dict, Tuple, Optional
-from dataclasses import dataclass
+import numpy as np
+import pandas as pd
 
-@dataclass
-class Song:
+def apply_scoring_rule(seed_vector, matrix):
     """
-    Represents a song and its attributes.
-    Required by tests/test_recommender.py
+    SCORING RULE: Evaluates a standalone candidate track relative to user preferences.
+    Uses vectorized NumPy broadcasting to calculate multi-dimensional Euclidean distance.
     """
-    id: int
-    title: str
-    artist: str
-    genre: str
-    mood: str
-    energy: float
-    tempo_bpm: float
-    valence: float
-    danceability: float
-    acousticness: float
+    delta = matrix - seed_vector
+    distances = np.linalg.norm(delta, axis=1)
+    
+    # Transform raw distances into a clear proximity score bound between 0-100%
+    match_scores = 1 / (1 + distances) * 100
+    return match_scores
 
-@dataclass
-class UserProfile:
-    """
-    Represents a user's taste preferences.
-    Required by tests/test_recommender.py
-    """
-    favorite_genre: str
-    favorite_mood: str
-    target_energy: float
-    likes_acoustic: bool
 
-class Recommender:
+def apply_ranking_rule(match_scores, dataframe, top_n=5):
     """
-    OOP implementation of the recommendation logic.
-    Required by tests/test_recommender.py
+    RANKING RULE: Curates, truncates, and sequences the raw data evaluations.
+    Uses argpartition to bypass full sorting bottlenecks across 1.2M items.
     """
-    def __init__(self, songs: List[Song]):
-        self.songs = songs
-
-    def recommend(self, user: UserProfile, k: int = 5) -> List[Song]:
-        # TODO: Implement recommendation logic
-        return self.songs[:k]
-
-    def explain_recommendation(self, user: UserProfile, song: Song) -> str:
-        # TODO: Implement explanation logic
-        return "Explanation placeholder"
-
-def load_songs(csv_path: str) -> List[Dict]:
-    """
-    Loads songs from a CSV file.
-    Required by src/main.py
-    """
-    # TODO: Implement CSV loading logic
-    print(f"Loading songs from {csv_path}...")
-    return []
-
-def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
-    """
-    Scores a single song against user preferences.
-    Required by recommend_songs() and src/main.py
-    """
-    # TODO: Implement scoring logic using your Algorithm Recipe from Phase 2.
-    # Expected return format: (score, reasons)
-    return []
-
-def recommend_songs(user_prefs: Dict, songs: List[Dict], k: int = 5) -> List[Tuple[Dict, float, str]]:
-    """
-    Functional implementation of the recommendation logic.
-    Required by src/main.py
-    """
-    # TODO: Implement scoring and ranking logic
-    # Expected return format: (song_dict, score, explanation)
-    return []
+    # Fast partition array mapping using negative score metrics to grab the largest values
+    top_indices = np.argpartition(-match_scores, top_n + 1)[:top_n + 1]
+    
+    # Arrange isolated elements sequentially from highest score to lowest
+    top_indices = top_indices[np.argsort(-match_scores[top_indices])]
+    
+    # Build structural presentation dataframe payload
+    ranked_results = dataframe.iloc[top_indices].copy()
+    ranked_results['match_score'] = np.round(match_scores[top_indices], 1)
+    
+    return ranked_results[['name', 'artists', 'match_score']]
