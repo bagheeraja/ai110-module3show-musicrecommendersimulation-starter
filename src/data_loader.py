@@ -39,8 +39,8 @@ def initialize_engine(csv_path="data/tracks_features.csv"):
 
     # --- NORMAL LOADING PIPELINE ---
     columns_to_keep = [
-        'id', 'name', 'artists', 'danceability', 'energy', 'key', 
-        'loudness', 'mode', 'speechiness', 'acousticness', 
+        'id', 'name', 'artists', 'album_id', 'danceability', 'energy', 'key',
+        'loudness', 'mode', 'speechiness', 'acousticness',
         'instrumentalness', 'liveness', 'valence', 'tempo'
     ]
     
