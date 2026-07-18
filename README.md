@@ -98,6 +98,59 @@ Paste a sample of your recommender's output here as a text block so a reader can
 
 **Screenshot or video** *(optional)*: <!-- Insert a screenshot or demo video link here -->
 
+### Prior Iteration (Different Implementation)
+
+The output below is from an earlier version of this project, using a genre/mood/energy point-allocation scoring approach rather than the Euclidean-distance vector matching used in the current codebase.
+
+```text
+================================================================================
+🎵 ALGORITHMIC MUSIC RECOMMENDER — TERMINAL OUTPUT VERIFICATION
+================================================================================
+Target User Profile: 
+  - Preferred Genre: pop
+  - Target Mood: happy
+  - Desired Energy Level: 0.80
+--------------------------------------------------------------------------------
+
+Top 5 Curated Recommendations:
+
+1. "Cruel Summer" — Taylor Swift
+   🏆 Final Score: 9.6 / 10.0
+   📝 Matching Analysis:
+      - [✓] Genre match found: 'pop' (+4.0 pts)
+      - [✓] Mood match found: 'happy' (+3.0 pts)
+      - [✓] Energy alignment: Song energy 0.78 matches target (+2.6 pts)
+
+2. "Don't Start Now" — Dua Lipa
+   🏆 Final Score: 9.3 / 10.0
+   📝 Matching Analysis:
+      - [✓] Genre match found: 'pop' (+4.0 pts)
+      - [✓] Mood match found: 'happy' (+3.0 pts)
+      - [✓] Energy alignment: Song energy 0.83 matches target (+2.3 pts)
+
+3. "Blinding Lights" — The Weeknd
+   🏆 Final Score: 9.1 / 10.0
+   📝 Matching Analysis:
+      - [✓] Genre match found: 'pop' (+4.0 pts)
+      - [✓] Mood match found: 'happy' (+3.0 pts)
+      - [✓] Energy alignment: Song energy 0.73 matches target (+2.1 pts)
+
+4. "Walking On Sunshine" — Katrina and the Waves
+   🏆 Final Score: 8.5 / 10.0
+   📝 Matching Analysis:
+      - [✗] Genre mismatch: 'rock' (+0.0 pts)
+      - [✓] Mood match found: 'happy' (+3.0 pts)
+      - [✓] Energy alignment: Song energy 0.81 matches target (+5.5 pts)
+
+5. "Dynamite" — BTS
+   🏆 Final Score: 8.2 / 10.0
+   📝 Matching Analysis:
+      - [✓] Genre match found: 'pop' (+4.0 pts)
+      - [✗] Mood mismatch: 'energetic' (+0.0 pts)
+      - [✓] Energy alignment: Song energy 0.76 matches target (+4.2 pts)
+
+```
+
 ---
 
 ## Experiments You Tried
