@@ -39,8 +39,8 @@ def initialize_engine(csv_path="data/tracks_features.csv"):
 
     # --- NORMAL LOADING PIPELINE ---
     columns_to_keep = [
-        'id', 'name', 'artists', 'album_id', 'danceability', 'energy', 'key',
-        'loudness', 'mode', 'speechiness', 'acousticness',
+        'id', 'name', 'artists', 'album_id', 'danceability', 'energy',
+        'loudness', 'speechiness', 'acousticness',
         'instrumentalness', 'liveness', 'valence', 'tempo'
     ]
     
@@ -48,7 +48,7 @@ def initialize_engine(csv_path="data/tracks_features.csv"):
     df = df.drop_duplicates(subset=['name', 'artists'])
     
     # Downcasting logic
-    dtype_mapping = {'key': 'int8', 'mode': 'int8'}
+    dtype_mapping = {}
     float_cols = ['danceability', 'energy', 'loudness', 'speechiness', 'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo']
     for col in float_cols:
         dtype_mapping[col] = 'float32'
@@ -58,18 +58,10 @@ def initialize_engine(csv_path="data/tracks_features.csv"):
     df['tempo_norm'] = (df['tempo'] - df['tempo'].min()) / (df['tempo'].max() - df['tempo'].min())
     df['loudness_norm'] = (df['loudness'] - df['loudness'].min()) / (df['loudness'].max() - df['loudness'].min())
 
-    # Musical key is circular (key 11 / B and key 0 / C are adjacent, not far apart),
-    # so encode it as an (x, y) point on the unit circle instead of a raw 0-11 integer.
-    # Scaled by 0.5 so key_x/key_y span [-0.5, 0.5] (range 1), matching the other
-    # 0-1 features' range, instead of the unit circle's natural [-1, 1] (range 2) —
-    # otherwise key would still be weighted 2x as heavily as everything else.
-    df['key_x'] = (0.5 * np.cos(2 * np.pi * df['key'] / 12)).astype('float32')
-    df['key_y'] = (0.5 * np.sin(2 * np.pi * df['key'] / 12)).astype('float32')
-
     feature_cols = [
         'danceability', 'energy', 'speechiness', 'acousticness',
         'instrumentalness', 'liveness', 'valence', 'tempo_norm',
-        'loudness_norm', 'mode', 'key_x', 'key_y',
+        'loudness_norm'
     ]
     feature_matrix = df[feature_cols].to_numpy(dtype=np.float32)
 
