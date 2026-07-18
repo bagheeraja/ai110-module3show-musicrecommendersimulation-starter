@@ -81,7 +81,7 @@ def run_app():
 
     st.set_page_config(page_title="Music Vector Engine", layout="centered")
 
-    st.title("🎵 Vector-Based Music Recommender")
+    st.title("🎵 VectorTune")
 
     # Initialize and pull shared data structures from cache
     with st.spinner("Caching and normalizing 1.2M track data matrix..."):

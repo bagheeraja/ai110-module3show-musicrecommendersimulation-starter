@@ -103,7 +103,8 @@ Matched: Blinding Lights ['Pentatonix']
 When Lightning Strikes         ['Sean Earle']    90.099998
 ```
 
-**Screenshot or video** *(optional)*: <!-- Insert a screenshot or demo video link here -->
+**Screenshot or video** *(optional)*: 
+![VectorTune app walkthrough](data/vector-tune-app-walkthrough.gif)
 
 ### Prior Iteration (Different Implementation)
 
@@ -461,14 +462,8 @@ Re-running the stress test, two profiles' results actually changed as a result (
 
 ## Reflection
 
-Read and complete `model_card.md`:
 
 [**Model Card**](model_card.md)
-
-Write 1 to 2 paragraphs here about what you learned:
-
-- about how recommenders turn data into predictions
-- about where bias or unfairness could show up in systems like this
 
 Building this made concrete something I'd only understood abstractly before: a recommender doesn't need to know what a song "means" to a person in order to predict what they'll like — it just needs the right numbers and a distance function. Turning "taste" into a handful of floats (danceability, energy, valence, and so on) and reducing "similarity" to a Euclidean distance felt almost too simple to work, but running it against a 1.2M-track catalog kept producing recommendations that were genuinely defensible. That was the core lesson: prediction, at its most basic, is just measuring how close two points are in a space you've chosen — and the whole system lives or dies on whether that space actually captures what matters.
 
